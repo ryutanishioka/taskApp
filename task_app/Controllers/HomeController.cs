@@ -10,9 +10,8 @@ namespace task_app.Controllers
     {
         public ActionResult Index()
         {
-            return View();
+            return RedirectToAction("TaskView", "ShowTask");
         }
-
         public ActionResult About()
         {
             ViewBag.Message = "Your application description page.";

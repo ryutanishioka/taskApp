@@ -1,0 +1,159 @@
+﻿@model task_app.ViewModels.TaskViewModel
+@{
+    ViewBag.Title = "TaskView";
+}
+
+<main>
+    <h2>タスク管理</h2>
+
+    <div>
+        <h3>タスクを追加</h3>
+        <form id="addTaskForm" action="@Url.Action("AddTask", "ShowTask")" method="post">
+            <label for="taskName">Task Name:</label>
+            <input type="text" id="taskName" name="taskName" required />
+            <fieldset>
+                <legend style="font-weight:bold;">Priority:</legend>
+
+                <input type="radio" id="priorityLow" name="priority" value="1" required>
+                <label for="priorityLow">1</label><br>
+
+                <input type="radio" id="priorityMedium" name="priority" value="2" required>
+                <label for="priorityMedium">2</label><br>
+
+                <input type="radio" id="priorityHigh" name="priority" value="3" required>
+                <label for="priorityHigh">3</label><br>
+            </fieldset>
+            <button type="submit">Add Task</button>
+        </form>
+    </div>
+
+    <hr />
+
+    <div>
+        <h3>タスク一覧</h3>
+        <table id="taskTable">
+            <thead>
+                <tr>
+                    <th>タスク名</th>
+                    <th>優先度</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- タスクリストがここに表示される -->
+            </tbody>
+        </table>
+    </div>
+</main>
+
+
+<!-- jQueryを用いた操作処理 -->
+<script>
+$(document).ready(function () {
+    loadTasks();
+
+    $('#addTaskForm').on('submit', function (event) {
+        event.preventDefault(); // ページリロードを防ぐ
+        addTask();
+    });
+});
+//タスク一覧表示
+function loadTasks() {
+    $.ajax({
+        url: '@Url.Action("GetTasks", "ShowTask")',
+        type: 'GET',
+        success: function(data) {
+            // コンソールにログ出力してデータの構造を確認
+            console.log(data);
+
+            let taskTable = $('#taskTable tbody');
+            taskTable.empty();
+
+            if (Array.isArray(data)) {
+                $.each(data, function(index, task) {
+                    taskTable.append(
+                        '<tr><td>' + task.TaskInfo + '</td><td>' + task.Pryority + '</td><td>'
+                        + '<button onclick="editTask(' + task.Id + ')">Edit</button>'
+                        + '<button onclick="deleteTask(' + task.Id + ')">Delete</button>'
+                        + '</td></tr>'
+                    );
+                });
+            } else {
+                console.error("Data is not an array:", data);
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error('Failed to load tasks:', textStatus, errorThrown);
+        }
+    });
+}
+//タスク追加処理
+function addTask() {
+    $.ajax({
+        url: $('#addTaskForm').attr('action'),
+        type: 'POST',
+        data: $('#addTaskForm').serialize(),
+        success: function (response) {
+            // タスク追加後のレスポンス処理
+            if (response.success) {
+                loadTasks();
+                console.log('成功');
+                $('#addTaskForm')[0].reset(); // フォームのリセット
+            } else {
+                console.error('Failed to add task:', response.message);
+            }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            console.error('Failed to add task:', textStatus, errorThrown);
+        }
+    });
+}
+
+@*function editTask(taskId) {
+    let newTaskName = prompt("Enter new task name:");
+    if (newTaskName) {
+        $.post('@Url.Action("EditTask", "ShowTask")', { id: taskId, name: newTaskName }, function() {
+            loadTasks();
+        });
+    }
+}*@
+function editTask(taskId) {
+    let newTaskName = prompt("タスク名を変更します");
+    if (newTaskName) {
+        $.ajax({
+            url: '@Url.Action("EditTask", "ShowTask")',
+            type: 'POST',
+            data: { id: taskId, taskName: newTaskName },
+            success: function(response) {
+                if(response.success) {
+                    loadTasks();
+                } else {
+                    console.error('Failed to edit task:', response.message);
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('Failed to edit task:', textStatus, errorThrown);
+            }
+        });
+    }
+}
+//タスク削除処理
+function deleteTask(taskId) {
+    if (confirm("このタスクを削除しますか?")) {
+        $.ajax({
+            url: '@Url.Action("DeleteTask", "ShowTask")',
+            type: 'POST',
+            data: { id: taskId },
+            success: function(response) {
+                if(response.success) {
+                    loadTasks();
+                } else {
+                    console.error('Failed to delete task:', response.message);
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('Failed to delete task:', textStatus, errorThrown);
+            }
+        });
+    }
+}
+</script>

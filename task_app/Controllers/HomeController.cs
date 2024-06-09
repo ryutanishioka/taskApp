@@ -10,7 +10,7 @@ namespace task_app.Controllers
     {
         public ActionResult Index()
         {
-            return View("Login");
+            return RedirectToAction("TaskView", "ShowTask");
         }
         public ActionResult About()
         {
